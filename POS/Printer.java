@@ -1,5 +1,7 @@
 package POS;
 
+import java.util.List;
+
 public class Printer {
 
     public static void printReceipt(Receipt receipt) {
@@ -21,6 +23,19 @@ public class Printer {
         System.out.println("         THANK YOU, COME AGAIN!       ");
         System.out.println("======================================");
     }
+
+    public static void printSalesReport(List<Receipt> receipts, double total) {
+        System.out.println("===== SALES REPORT =====");
+        for (Receipt r : receipts) {
+            System.out.println("Receipt #" + r.getId() +
+                               " | Cashier: " + r.getCashier().getName() + " Id : " + r.getCashier().getId() + 
+                               " | Total: " + r.getOrder().getTotalPayable());
+        }
+        System.out.println("------------------------");
+        System.out.println("Total Sales: " + total);
+        System.out.println("========================");
+    }
+
 
     public static void printError(String message) {
         System.out.println("[ERROR] " + message);
