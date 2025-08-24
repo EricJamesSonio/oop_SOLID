@@ -50,6 +50,10 @@ public class Order {
         }
     }
 
+    public Customer getCustomer() {
+        return customer;
+    }
+
     public double getSubTotal() {
         return subTotal;
     }
