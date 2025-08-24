@@ -19,4 +19,9 @@ public class Cashier extends Employee{
     public OrderProcessor getOrderProcessor() {
         return processor;
     }
+
+    @Override
+    public String getDetails() {
+        return String.format("Cashier Name : %s , Id : %d ", getName() ,getId());
+    }
 }

@@ -36,6 +36,20 @@ public class Printer {
         System.out.println("========================");
     }
 
+    public static void printOrder(Order order) {
+        System.out.println("----- ORDER DETAILS -----");
+        for (OrderItem item : order.getItems().keySet()) {
+            int quantity = order.getItems().get(item);
+            System.out.printf("%s | Quantity: %d | Price: %.2f%n", 
+                              item.getDetails(), quantity, item.getPrice());
+        }
+        System.out.println("-------------------------");
+        System.out.printf("SubTotal: %.2f%n", order.getSubTotal());
+        System.out.printf("Discounts: -%.2f%n", order.getDiscountAmount());
+        System.out.printf("Total Payable: %.2f%n", order.getTotalPayable());
+        System.out.println("-------------------------");
+    }
+
 
     public static void printError(String message) {
         System.out.println("[ERROR] " + message);

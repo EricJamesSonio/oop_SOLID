@@ -1,5 +1,7 @@
 package POS;
 
+import java.util.HashMap;
+
 public class Order {
     private Customer customer;
     private double subTotal;
@@ -15,7 +17,7 @@ public class Order {
 
     public double computeSubTotal() {
         double total = 0;
-        for (MenuItem item : customer.getOrders().getItems().keySet()) {
+        for (OrderItem item : customer.getOrders().getItems().keySet()) {
             total += item.getPrice();
         }
         this.subTotal = total;
@@ -45,9 +47,7 @@ public class Order {
     }
 
     public void displayItems() {
-        for (MenuItem item : customer.getOrders().getItems().keySet()) {
-            System.out.println(item.getDetails());
-        }
+        Printer.printOrder(this);
     }
 
     public Customer getCustomer() {
@@ -65,4 +65,8 @@ public class Order {
     public double getTotalPayable() {
         return totalPayable;
     }
-}
+
+    public HashMap<OrderItem, Integer> getItems() {
+        return customer.getOrders().getItems();
+    }
+ }

@@ -3,25 +3,26 @@ import java.util.*;
 
 
 public class OrderList {
-    private HashMap<MenuItem , Integer> items;
+    private HashMap<OrderItem , Integer> items;
 
     public OrderList () {
         this.items = new HashMap<>();
     }
 
     public void addItem(MenuItem item , int quantity) {
-        MenuItem existing = findItem(item.getCode());
+        OrderItem orderItem = new OrderItem(item);
+        OrderItem existing = findItem(item.getCode());
 
         if (existing != null) {
             int newqtty = items.get(existing) + quantity;
             items.put(existing, newqtty);
         } else {
-            items.put(item, quantity);
+            items.put(orderItem, quantity);
         }
     } 
 
     public void removeItem(int code) {
-        MenuItem existing = findItem(code);
+        OrderItem existing = findItem(code);
 
         if (existing != null) {
             items.remove(existing);
@@ -31,7 +32,7 @@ public class OrderList {
     }
 
     public void updateQuantity(int code, int quantity) {
-        MenuItem existing = findItem(code);
+        OrderItem existing = findItem(code);
 
         if (existing != null) {
             items.put(existing, quantity); // Replace the Old quantity by the new Quantity
@@ -39,13 +40,13 @@ public class OrderList {
     }
 
     public void displayItems() {
-        for (MenuItem item : items.keySet()) {
+        for (OrderItem item : items.keySet()) {
             System.out.println(item.getDetails());
         }
     }
 
-    public MenuItem findItem(int code) {
-        for (MenuItem item : items.keySet()) {
+    public OrderItem findItem(int code) {
+        for (OrderItem item : items.keySet()) {
             if (item.getCode() == code) {
                 return item;
             }
@@ -53,7 +54,7 @@ public class OrderList {
         return null;
     }
 
-    public HashMap <MenuItem, Integer> getItems() {
+    public HashMap <OrderItem, Integer> getItems() {
         return items;
     }
 }

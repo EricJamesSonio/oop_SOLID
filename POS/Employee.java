@@ -1,6 +1,6 @@
 package POS;
 
-public class Employee {
+public abstract class Employee {
     private String name;
     private int id;
 
@@ -16,4 +16,6 @@ public class Employee {
     public int getId() {
         return id;
     }
+
+    public abstract String getDetails();
 }
