@@ -11,17 +11,17 @@ public class OrderProcessor {
         Order order = new Order(customer);
 
         if (order.getTotalPayable() > payment ) {
-            System.out.println("Payment not Enough! ");
+            Printer.printError("Payment not Enough!");
             return;
         }
 
         double change = payment - order.getTotalPayable();
 
         Receipt receipt = new Receipt(order, payment, change, cashier);
-        receipt.displayReceipt();
+        Printer.printReceipt(receipt);   // i Use Printer here instead of putting prints 
         records.addReceipt(receipt);
 
-        System.out.println("Payment Succesfully! ");
+        Printer.printMessage("Payment Successfully!");
     }
     
     public OrderRecord getRecords() {
