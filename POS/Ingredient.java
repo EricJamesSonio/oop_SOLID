@@ -29,7 +29,7 @@ public class Ingredient {
         return price;
     }
 
-    public String getUnit() {
+    public String getUnitStock() {
         return unitStock;
     }
 
