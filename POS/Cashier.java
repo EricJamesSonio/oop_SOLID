@@ -8,8 +8,8 @@ public class Cashier extends Employee{
         this.processor = new OrderProcessor();
     }
 
-    public void processOrder(Customer customer, double payment) {
-        processor.processOrder(customer, payment, this);
+    public void processOrder(Order order, double payment) {
+        processor.processOrder(order, payment, this);
     }
 
     public OrderRecord getRecords() {

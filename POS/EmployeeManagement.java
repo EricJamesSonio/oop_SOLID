@@ -6,10 +6,12 @@ public class EmployeeManagement {
     private List<Employee> employees;
     private List<Auth> accounts;
     private static int nextId = 1;
+    private ManagementViewer viewer;
 
     public EmployeeManagement () {
         this.employees = new ArrayList<>();
-        this.accounts = new ArrayList<>();
+        this.accounts = new ArrayList<>();  
+        this.viewer = new ManagementViewer(this);
     }
 
     public boolean addEmployee(Employee emp) {
@@ -105,6 +107,13 @@ public class EmployeeManagement {
         return accounts;
     }
 
+    public void displayEmployees() {
+        viewer.displayEmployees();
+    }
+
+    public void displayAccounts() {
+        viewer.displayAccounts();
+    }
 }
 
 class ManagementViewer {

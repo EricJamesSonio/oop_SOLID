@@ -11,6 +11,10 @@ public class OrderItem {
         return String.format("Name : %s, Price : %.2f" , item.getName(), item.getPrice());
     }
 
+    public String getName() {
+        return item.getName();
+    }
+
     public int getCode() {
         return item.getCode();
     }

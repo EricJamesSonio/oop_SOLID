@@ -16,4 +16,22 @@ public class IngredientAmount {
     public double getAmount() {
         return amount;
     }
+
+    public void addAmount(double value) {
+        if (value <= 0) throw new IllegalArgumentException("Value must be positive");
+        amount += value;
+    }
+
+    public void deductAmount(double value) {
+        if (value <= 0) throw new IllegalArgumentException("Value must be positive");
+        if (value > amount) throw new IllegalStateException("Not enough stock");
+        amount -= value;
+    }
+
+
+    public int getIngredientCode() {
+        return ingredient.getCode();
+    }
+
+
 }

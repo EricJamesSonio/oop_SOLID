@@ -7,9 +7,8 @@ public class OrderProcessor {
         this.records = new OrderRecord();
     }
 
-    public void processOrder(Customer customer, double payment, Cashier cashier) {
-        Order order = new Order(customer);
-
+    public void processOrder(Order order, double payment, Cashier cashier) {
+        
         if (order.getTotalPayable() > payment ) {
             Printer.printError("Payment not Enough!");
             return;
