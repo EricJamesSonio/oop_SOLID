@@ -1,4 +1,4 @@
-package POS.Menu.Ingredients;
+package POS.Inventory.Ingredients;
 
 import java.time.LocalDate;
 

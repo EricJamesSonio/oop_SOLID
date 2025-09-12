@@ -1,10 +1,12 @@
-package POS.Menu.Ingredients;
+package POS.Inventory.Ingredients;
 
 public class IngredientAmount {
-    private Ingredient ingredient;
+    private final Ingredient ingredient; // immutable reference
     private double amount;
 
     public IngredientAmount(Ingredient ingredient, double amount) {
+        if (ingredient == null) throw new IllegalArgumentException("Ingredient cannot be null");
+        if (amount < 0) throw new IllegalArgumentException("Amount cannot be negative");
         this.ingredient = ingredient;
         this.amount = amount;
     }
@@ -28,10 +30,7 @@ public class IngredientAmount {
         amount -= value;
     }
 
-
     public int getIngredientCode() {
         return ingredient.getCode();
     }
-
-
 }

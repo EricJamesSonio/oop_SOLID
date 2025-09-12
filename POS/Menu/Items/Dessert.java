@@ -1,6 +1,6 @@
 package POS.Menu.Items;
+import POS.Inventory.Ingredients.Recipe;
 import POS.Menu.Base.MenuItem;
-import POS.Menu.Ingredients.Recipe;
 
 import java.time.LocalDate;
 

@@ -1,7 +1,7 @@
 package POS.Menu.Base;
-import POS.Menu.Ingredients.Recipe;
-
 import java.time.LocalDate;
+
+import POS.Inventory.Ingredients.Recipe;
 
 public abstract class MenuItem {
     private String name;

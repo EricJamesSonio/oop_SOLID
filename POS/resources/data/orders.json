@@ -1,0 +1,25 @@
+[
+  {
+    "id": 1,
+    "customerType": "REGULAR",
+    "items": [
+      { "code": 101, "qty": 2 },
+      { "code": 102, "qty": 1 }
+    ]
+  },
+  {
+    "id": 2,
+    "customerType": "SENIOR",
+    "items": [
+      { "code": 201, "qty": 3 }
+    ]
+  },
+  {
+    "id": 3,
+    "customerType": "PWD",
+    "items": [
+      { "code": 301, "qty": 1 },
+      { "code": 302, "qty": 2 }
+    ]
+  }
+]

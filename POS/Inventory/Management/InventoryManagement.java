@@ -1,97 +1,60 @@
 package POS.Inventory.Management;
-import POS.Menu.Ingredients.IngredientAmount;
-import POS.Menu.Ingredients.Ingredient;
-import java.util.*;
 
-public class InventoryManagement {
-    private List<IngredientAmount> ingredients;
-    private InventoryViewer viewer;
+import java.util.*;
+import POS.Inventory.Ingredients.Ingredient;
+import POS.Inventory.Ingredients.IngredientAmount;
+
+public class InventoryManagement implements InventoryReadable, InventoryWritable {
+
+    private final Map<Integer, IngredientAmount> ingredientMap;
 
     public InventoryManagement() {
-        this.ingredients = new ArrayList<>();
-        this.viewer = new InventoryViewer(this);
+        this.ingredientMap = new HashMap<>();
     }
 
+    @Override
     public boolean addIngredientAmount(Ingredient newIngredient, double amount) {
-        IngredientAmount existing = findIngredientAmount(newIngredient.getCode());
+        if (amount <= 0) throw new IllegalArgumentException("Amount must be positive");
+        IngredientAmount existing = ingredientMap.get(newIngredient.getCode());
         if (existing != null) {
             existing.addAmount(amount);
-            return true;
-        }
-        IngredientAmount newIngredientAmount = new IngredientAmount(newIngredient, amount);
-        ingredients.add(newIngredientAmount);
-        return true;
-    }
-
-    public boolean deductIngredientAmount(int code, double value) {
-        IngredientAmount existing = findIngredientAmount(code);
-        if (existing == null) {
-            return false; 
-        }
-        if (value > existing.getAmount()) {
-            return false;
-        }
-        existing.deductAmount(value);
-        if (existing.getAmount() <= 0) {
-            ingredients.remove(existing);
+        } else {
+            ingredientMap.put(newIngredient.getCode(), new IngredientAmount(newIngredient, amount));
         }
         return true;
     }
 
+    @Override
+    public boolean deductIngredientAmount(int code, double amount) {
+        IngredientAmount existing = ingredientMap.get(code);
+        if (existing == null || amount <= 0) return false;
+        try {
+            existing.deductAmount(amount);
+        } catch (IllegalStateException e) {
+            return false; // not enough stock
+        }
+        if (existing.getAmount() <= 0) ingredientMap.remove(code);
+        return true;
+    }
 
-
+    @Override
     public boolean removeIngredientAmount(int code) {
-        IngredientAmount existing = findIngredientAmount(code);
-        if (existing != null) {
-            ingredients.remove(existing);
-            return true;
-        }
-        return false;
+        return ingredientMap.remove(code) != null;
     }
 
+    @Override
     public IngredientAmount findIngredientAmount(int code) {
-        for (IngredientAmount i : ingredients) {
-            if (i.getIngredientCode() == code) {
-                return i;
-            }
-        }
-        return null;
+        return ingredientMap.get(code);
     }
 
-    public Ingredient getIngredient(int id) {
-        for (IngredientAmount i : ingredients) {
-            if (i.getIngredient().getCode() == id) {
-                return i.getIngredient();
-            }
-        }
-        return null;
+    @Override
+    public Ingredient getIngredient(int code) {
+        IngredientAmount ia = ingredientMap.get(code);
+        return (ia != null) ? ia.getIngredient() : null;
     }
 
+    @Override
     public List<IngredientAmount> getAllIngredientAmounts() {
-        return ingredients;
+        return Collections.unmodifiableList(new ArrayList<>(ingredientMap.values()));
     }
-
-    public void displayInventory() {
-        viewer.displayInventoryManagement();
-    }
-}
-
-class InventoryViewer {
-    private InventoryManagement management;
-
-    public InventoryViewer (InventoryManagement management) {
-        this.management = management;
-    }
-
-    public void displayInventoryManagement() {
-        for (IngredientAmount i : management.getAllIngredientAmounts()) {
-            System.out.println(i.getIngredient());
-            }
-    }
-
-    public InventoryManagement getManagement() {
-        return management;
-    }
-
-
 }

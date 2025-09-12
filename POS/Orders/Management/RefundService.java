@@ -1,23 +1,39 @@
 package POS.Orders.Management;
-import POS.Orders.Base.OrderStatus;
-import POS.Orders.Models.Order;
-import POS.Orders.Models.OrderItem;
 
-public class RefundService {
-    public static void refundOrder(Order order) {
-        order.setStatus(OrderStatus.REFUNDED);
-        order.setTotalsToZero(); // method inside Order
+import POS.Orders.Management.Interfaces.IOrderRefundService;
+import POS.Orders.Models.Order;
+import POS.Orders.Receipts.ReceiptRepository;
+import POS.Orders.Base.OrderStatus;
+
+public class RefundService implements IOrderRefundService {
+    private final ReceiptRepository receiptRepo;
+
+    public RefundService(ReceiptRepository receiptRepo) {
+        this.receiptRepo = receiptRepo;
     }
 
-    public static void partialRefund(Order order, OrderItem item, int quantity) {
-        // reduce or remove item from the order
-        int currentQty = order.getItems().getOrDefault(item, 0);
-        if (currentQty > quantity) {
-            order.getItems().put(item, currentQty - quantity);
-        } else {
-            order.getItems().remove(item);
-        }
-        // re-compute totals after refund
-        order.recalculateTotals();
+    @Override
+    public void fullRefund(Order order) {
+        if (order == null) return;
+        order.setStatus(OrderStatus.REFUNDED);
+        order.setTotalsToZero();
+        var receipt = receiptRepo.findReceiptById(order.getId());
+        if (receipt != null) receipt.processFullRefund();
+    }
+
+    @Override
+    public void partialRefund(Order order, double amount) {
+        if (order == null || amount <= 0 || amount > order.getTotalPayable()) return;
+        var receipt = receiptRepo.findReceiptById(order.getId());
+        if (receipt != null) receipt.processPartialRefund(amount);
+    }
+
+    @Override
+    public void returnOrder(Order order) {
+        if (order == null) return;
+        order.setStatus(OrderStatus.REFUNDED);
+        order.setTotalsToZero();
+        var receipt = receiptRepo.findReceiptById(order.getId());
+        if (receipt != null) receipt.processReturn();
     }
 }

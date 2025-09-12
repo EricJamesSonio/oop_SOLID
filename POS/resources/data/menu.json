@@ -1,0 +1,6 @@
+[
+  {"type":"Drink","name":"Cappuccino","code":101,"price":120.0,"description":"Espresso drink","expDate":"2025-12-31"},
+  {"type":"MainDish","name":"Burger","code":201,"price":180.0,"description":"Beef burger","expDate":"2025-12-31"},
+  {"type":"Dessert","name":"Cheesecake","code":301,"price":150.0,"description":"Sweet cheesecake","expDate":"2025-12-31"},
+  {"type":"SideDish","name":"Fries","code":401,"price":60.0,"description":"Crispy fries","expDate":"2025-12-31"}
+]

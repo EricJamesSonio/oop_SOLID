@@ -1,4 +1,4 @@
-package POS.Employee.Management;
+package POS.Employee.Login;
 import POS.Employee.Base.Employee;
 
 public class Auth {
@@ -42,6 +42,11 @@ public class Auth {
     public int getId() {
         return id;
     }
+
+    public void setEmployee(Employee emp) {
+        this.emp = emp;
+    }
+
 
     public boolean checkPassword(String inputPassword) {
         return inputPassword.equals(password);

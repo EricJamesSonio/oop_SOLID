@@ -17,5 +17,10 @@ public abstract class Employee {
         return id;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+
     public abstract String getDetails();
 }
