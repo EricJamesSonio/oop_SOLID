@@ -1,0 +1,107 @@
+POS/                        
+│
+├── Employee/               
+│   ├── Base/               
+│   │   └── Employee.java
+│   ├── Staff/              
+│   │   ├── Admin.java
+│   │   └── Cashier.java
+│   ├── Management/         
+│   │   ├── EmployeeManagement.java
+│   │   ├── Auth.java
+│   │   └── Login.java
+│   └── UI/                 
+│       ├── Admin/
+│       │   ├── TUI/AdminTUI.java
+│       │   └── GUI/AdminGUI.java
+│       └── Cashier/
+│           ├── TUI/CashierTUI.java
+│           └── GUI/CashierGUI.java
+│
+├── Menu/                   
+│   ├── Base/MenuItem.java
+│   ├── Items/              
+│   │   ├── MainDish.java
+│   │   ├── SideDish.java
+│   │   ├── Dessert.java
+│   │   └── Drink.java
+│   └── Ingredients/        
+│       ├── Ingredient.java
+│       ├── IngredientAmount.java
+│       └── Recipe.java
+│
+├── Orders/                 
+│   ├── Base/               
+│   │   ├── Discount.java
+│   │   ├── OrderStatus.java
+│   │   └── CustomerType.java
+│   ├── Discounts/          
+│   │   ├── PWDDiscount.java
+│   │   ├── SeniorDiscount.java
+│   │   ├── DiscountRule.java
+│   │   ├── SeniorDiscountRule.java
+│   │   └── PWDDiscountRule.java
+│   ├── Management/         
+│   │   ├── OrderManagement.java
+│   │   ├── OrderProcessor.java
+│   │   └── RefundService.java
+│   ├── Models/             
+│   │   ├── Order.java
+│   │   ├── OrderItem.java
+│   │   └── OrderList.java
+│   ├── Receipts/           
+│   │   ├── Receipt.java
+│   │   └── ReceiptRepository.java
+│   ├── Services/           # new folder for services like DiscountService & factory
+│   │   ├── DiscountCalculator.java
+│   │   ├── DiscountService.java
+│   │   └── DiscountFactory.java
+│   └── UI/                 
+│       ├── TUI/OrderManagementTUI.java
+│       └── GUI/OrderManagementGUI.java
+│
+├── Table/                  
+│   ├── Base/TableStatus.java
+│   ├── Management/TableManagement.java
+│   ├── Models/Table.java
+│   └── UI/                 
+│       ├── TUI/TableTUI.java
+│       └── GUI/TableGUI.java
+│
+├── Inventory/              
+│   ├── Management/InventoryManagement.java
+│   └── UI/                 
+│       ├── TUI/InventoryTUI.java
+│       └── GUI/InventoryGUI.java
+│
+├── Reporting/              
+│   ├── Reports/SalesReport.java
+│   ├── Utils/Calculator.java
+│   ├── Printer/Printer.java
+│   └── UI/
+│       ├── TUI/ReportingTUI.java
+│       └── GUI/ReportingGUI.java
+│
+├── Restaurant/             
+│   └── Models/
+│       ├── Restaurant.java
+│       └── Address.java
+│
+├── UI/                     
+│   ├── BaseUI.java
+│   └── UIFactory.java
+│
+├── Utils/                  
+│   └── DataLoader.java
+│
+├── resources/              
+│   └── data/
+│       ├── employees.json
+│       ├── menu.json
+│       ├── orders.json
+│       ├── tables.json
+│       ├── inventory.json
+│       ├── reports.json
+│       └── restaurant.json
+│
+└── Main.java

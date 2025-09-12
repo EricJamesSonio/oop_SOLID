@@ -1,0 +1,33 @@
+package POS;
+
+/// i remove this class since i notice it doesn;'t really neccesary to habe this class since we dont tract each customer
+unless we modify in the future to have vip, regular custoemr etc.. bus as of now nmotrreally
+
+public class Customer {
+    private CustomerType id;
+    private OrderList orders;
+
+
+    public Customer (CustomerType id) {
+        this.id = id;
+        this.orders = new OrderList();
+    }
+
+    public CustomerType getId() {a
+        return id;
+    }
+
+    public OrderList getOrders() {
+        return orders;
+    }
+
+    public void addItem(MenuItem item,  int quantity) {
+        orders.addItem(item, quantity);
+    }
+
+    public void removeItem(int code) {
+        orders.removeItem(code);
+    }
+
+    
+}
