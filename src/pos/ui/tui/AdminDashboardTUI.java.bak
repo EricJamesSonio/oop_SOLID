@@ -1,0 +1,504 @@
+
+package pos.ui.tui;
+
+import pos.ui.UI;
+import pos.model.Employee;
+import pos.service.*;
+import pos.model.MenuItem;
+import pos.model.Recipe;
+import pos.model.Ingredient;
+import pos.model.Order;
+import pos.model.OrderItem;
+import java.util.*;
+import java.io.*;
+
+public class AdminDashboardTUI implements UI {
+    private Employee self;
+    private MenuService menu;
+    private EmployeeService empService;
+    private AuthService auth;
+    private TableService tableService;
+    private OrderService orderService;
+    private InventoryService inventory;
+    private Scanner scanner = new Scanner(System.in);
+
+    public AdminDashboardTUI(Employee self, MenuService menu, EmployeeService empService, AuthService auth, TableService tableService, OrderService orderService, InventoryService inventory){
+        this.self = self; this.menu = menu; this.empService = empService; this.auth = auth; this.tableService = tableService; this.orderService = orderService; this.inventory = inventory;
+    }
+    @Override public void start(){
+        while(true){
+            System.out.println("\n--- ADMIN DASHBOARD ---");
+            System.out.println("1) Menu Management");
+            System.out.println("2) Order Management");
+            System.out.println("3) Table Management");
+            System.out.println("4) Employee Management");
+            System.out.println("5) Sales Report");
+            System.out.println("6) Inventory Management");
+            System.out.println("0) Logout");
+            System.out.print("Choose: "); String c = scanner.nextLine().trim();
+            if (c.equals("1")) menuManagement();
+            else if (c.equals("2")) orderManagement();
+            else if (c.equals("3")) tableManagement();
+            else if (c.equals("4")) employeeManagement();
+            else if (c.equals("5")) salesReportManagement();
+            else if (c.equals("6")) inventoryManagement();
+            else if (c.equals("0")){ System.out.println("Logging out..."); break; }
+            else System.out.println("Invalid");
+        }
+    }
+
+    // ---------------- Menu Management ----------------
+    private void menuManagement(){
+        while(true){
+            System.out.println("\n--- MENU MANAGEMENT ---");
+            System.out.println("1) View Menu");
+            System.out.println("2) View Recipes");
+            System.out.println("3) Add Menu Item");
+            System.out.println("4) Remove Menu Item");
+            System.out.println("5) Update Menu Item");
+            System.out.println("0) Back");
+            System.out.print("Choose: "); String c = scanner.nextLine().trim();
+            if (c.equals("1")) viewMenu();
+            else if (c.equals("2")) viewRecipes();
+            else if (c.equals("3")) addMenu();
+            else if (c.equals("4")) removeMenu();
+            else if (c.equals("5")) updateMenu();
+            else if (c.equals("0")) return;
+            else System.out.println("Invalid");
+        }
+    }
+
+    private void viewMenu(){
+        System.out.println("\n--- MENU ITEMS ---");
+        // group by category
+        Map<String, List<MenuItem>> groups = new LinkedHashMap<String, List<MenuItem>>();
+        for (MenuItem m : menu.all()){
+            String cat = m.getCategory();
+            if (!groups.containsKey(cat)) groups.put(cat, new ArrayList<MenuItem>());
+            groups.get(cat).add(m);
+        }
+        for (Map.Entry<String,List<MenuItem>> e : groups.entrySet()){
+            System.out.println("\n--- " + e.getKey() + " ---");
+            System.out.println("ID | Name | Price | Availability");
+            for (MenuItem m : e.getValue()){
+                String avail = "AVAILABLE";
+                boolean ok = true;
+                if (m.getRecipe() == null || m.getRecipe().getItems().isEmpty()){
+                    pos.model.Ingredient ingFound = null;
+                    for (pos.model.Ingredient i : inventory.all()) if (i.getName().toLowerCase().contains(m.getName().toLowerCase())) { ingFound = i; break; }
+                    if (ingFound==null || ingFound.getStock() < 1) ok = false;
+                } else {
+                    for (Map.Entry<Integer,Integer> re : m.getRecipe().getItems().entrySet()){
+                        pos.model.Ingredient ing = inventory.findById(re.getKey());
+                        if (ing==null || ing.getStock() < re.getValue()){ ok = false; break; }
+                    }
+                }
+                if (!ok) avail = "NOT AVAILABLE";
+                System.out.println(m.getId() + " | " + m.getName() + " | " + String.format("%.2f", m.getPrice()) + " | " + avail);
+            }
+        }
+    }
+
+    private void viewRecipes(){
+        System.out.println("\n--- VIEW RECIPES ---");
+        System.out.println("Select menu item to view ingredients:");
+        for (MenuItem m : menu.all()) System.out.println(m.getId() + " | " + m.getName() + " | " + m.getCategory());
+        System.out.print("Menu id (0 to back): "); String s = scanner.nextLine().trim();
+        int id = Integer.parseInt(s);
+        if (id==0) return;
+        MenuItem m = menu.findById(id);
+        if (m==null){ System.out.println("Not found"); return; }
+        if (m.getRecipe()==null || m.getRecipe().getItems().isEmpty()){
+            pos.model.Ingredient drinkIng = null;
+            for (Ingredient ing : inventory.all()){
+                if (ing.getName().toLowerCase().contains(m.getName().toLowerCase())){ drinkIng = ing; break; }
+            }
+            if (drinkIng != null) System.out.println(m.getName() + " -> " + drinkIng.getStock() + " " + drinkIng.getUnit());
+            else System.out.println("No recipe/ingredients for this item.");
+            return;
+        }
+        System.out.println("Ingredients for: " + m.getName());
+        for (Map.Entry<Integer,Integer> e : m.getRecipe().getItems().entrySet()){
+            pos.model.Ingredient ing = inventory.findById(e.getKey());
+            if (ing != null) System.out.println(" - " + ing.getName() + " -> " + e.getValue() + " " + ing.getUnit());
+            else System.out.println(" - Ingredient id="+e.getKey()+" missing in inventory");
+        }
+    }
+
+    private void addMenu(){
+        try{
+            int id = menu.nextId();
+            System.out.print("Name: "); String name = scanner.nextLine().trim();
+            System.out.print("Price: "); double price = Double.parseDouble(scanner.nextLine().trim());
+            System.out.println("Choose category: 1) Main Course 2) Side Dish 3) Drink");
+            System.out.print("Choice: "); String ch = scanner.nextLine().trim();
+            String cls = "";
+            Recipe r = new Recipe();
+            if (ch.equals("1")) cls = "MainCourse";
+            else if (ch.equals("2")) cls = "SideDish";
+            else if (ch.equals("3")) cls = "Drink";
+            boolean isDrink = cls.equals("Drink");
+            if (!isDrink){
+                System.out.println("Select ingredient ids and qty (format id:qty,id:qty). Available ingredients:");
+                for (Ingredient ing : inventory.all()) System.out.println(ing.toString());
+                System.out.print("Recipe: "); String rec = scanner.nextLine().trim();
+                r = Recipe.parse(rec);
+            }
+            MenuItem mi = null;
+            if (cls.equals("MainCourse")) mi = new pos.model.MainCourse(id,name,price,r);
+            else if (cls.equals("SideDish")) mi = new pos.model.SideDish(id,name,price,r);
+            else if (cls.equals("Drink")) mi = new pos.model.Drink(id,name,price);
+            menu.add(mi, cls);
+            System.out.println("Added.");
+        }catch(Exception ex){ System.out.println("Failed to add: " + ex.getMessage()); }
+    }
+
+    private void removeMenu(){
+        viewMenu();
+        System.out.print("Enter menu id to remove: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        menu.remove(id);
+        System.out.println("Removed if existed.");
+    }
+    private void updateMenu(){
+        viewMenu();
+        System.out.print("Enter menu id to update: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        MenuItem m = menu.findById(id);
+        if (m==null){ System.out.println("Not found"); return; }
+        System.out.print("New name (enter to keep): "); String name = scanner.nextLine().trim();
+        System.out.print("New price (enter to keep): "); String p = scanner.nextLine().trim();
+        if (name.length()>0) m.setName(name);
+        if (p.length()>0) m.setPrice(Double.parseDouble(p));
+        menu.update(m, m.getClass().getSimpleName());
+        System.out.println("Updated.");
+    }
+
+    // ---------------- Order Management ----------------
+    private void orderManagement(){
+        while(true){
+            System.out.println("\n--- ORDER MANAGEMENT ---");
+            System.out.println("1) View Orders");
+            System.out.println("2) Create Order (admin can create for table/walk-in)");
+            System.out.println("3) Checkout Order");
+            System.out.println("4) Refund Order");
+            System.out.println("5) Delete Order");
+            System.out.println("0) Back");
+            System.out.print("Choose: "); String c = scanner.nextLine().trim();
+            if (c.equals("1")) adminViewOrders();
+            else if (c.equals("2")) adminCreateOrder();
+            else if (c.equals("3")) adminCheckout();
+            else if (c.equals("4")) adminRefund();
+            else if (c.equals("5")) adminDeleteOrder();
+            else if (c.equals("0")) return;
+            else System.out.println("Invalid");
+        }
+    }
+
+    private void adminViewOrders(){
+        System.out.println("\n--- ALL ORDERS ---");
+        for (Order o : orderService.all()){
+            System.out.println("Order#"+o.getId()+" | status:"+o.getStatus()+" | table:"+o.getTableId()+" | subtotal:"+String.format("%.2f", o.getSubtotal())+" | discount:"+String.format("%.2f", o.getDiscountAmount())+" | createdBy:"+o.getCreatedBy());
+        }
+        System.out.print("Select order id to view or 0: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        if (id==0) return;
+        Order o = orderService.findById(id);
+        if (o==null){ System.out.println("Not found"); return; }
+        System.out.println("Items:"); for (OrderItem it : o.getItems()) System.out.println(" - " + it.getMenuItemName() + " x" + it.getQuantity() + " -> " + String.format("%.2f", it.getSubtotal()));
+        System.out.println("Subtotal: " + String.format("%.2f", o.getSubtotal()));
+        System.out.println("Discount: " + String.format("%.2f", o.getDiscountAmount()));
+        System.out.println("Total: " + String.format("%.2f", o.getTotal()));
+    }
+
+    private void adminCreateOrder(){
+        // reuse cashier create logic by instantiating CashierDashboardTUI-like flow here
+        pos.ui.tui.CashierDashboardTUI tmp = new pos.ui.tui.CashierDashboardTUI(self, menu, empService, auth, tableService, orderService, inventory);
+        tmp.createOrder(); // note: createOrder is private in original; in our code it is accessible since same package - but if not, it's okay to call via reflection; assuming same package access.
+    }
+
+    private void adminCheckout(){
+        System.out.print("Enter order id to checkout: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        pos.ui.tui.CashierDashboardTUI tmp = new pos.ui.tui.CashierDashboardTUI(self, menu, empService, auth, tableService, orderService, inventory);
+        tmp.checkout(id);
+    }
+
+    private void adminRefund(){
+        System.out.print("Enter order id to refund: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        pos.ui.tui.CashierDashboardTUI tmp = new pos.ui.tui.CashierDashboardTUI(self, menu, empService, auth, tableService, orderService, inventory);
+        tmp.refund(id);
+    }
+
+    private void adminDeleteOrder(){
+        System.out.print("Enter order id to delete: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        pos.ui.tui.CashierDashboardTUI tmp = new pos.ui.tui.CashierDashboardTUI(self, menu, empService, auth, tableService, orderService, inventory);
+        tmp.delete(id);
+    }
+
+    // ---------------- Table Management ----------------
+    private void tableManagement(){
+        while(true){
+            System.out.println("\n--- TABLE MANAGEMENT ---");
+            System.out.println("1) View Tables");
+            System.out.println("2) Assign Customer to Table");
+            System.out.println("3) Clean Table");
+            System.out.println("4) Add Table");
+            System.out.println("5) Remove Table");
+            System.out.println("0) Back");
+            System.out.print("Choose: "); String c = scanner.nextLine().trim();
+            if (c.equals("1")) viewTables();
+            else if (c.equals("2")) assignCustomerToTable();
+            else if (c.equals("3")) cleanTable();
+            else if (c.equals("4")) addTable();
+            else if (c.equals("5")) removeTable();
+            else if (c.equals("0")) return;
+            else System.out.println("Invalid");
+        }
+    }
+
+    private void viewTables(){
+        System.out.println("\n--- TABLES ---");
+        for (pos.model.Table t : tableService.all()) System.out.println(t.toString());
+    }
+    private void assignCustomerToTable(){
+        viewTables();
+        System.out.print("Table id: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        pos.model.Table t = tableService.findById(id);
+        if (t==null){ System.out.println("Not found"); return; }
+        if (!t.getStatus().equals("AVAILABLE")){ System.out.println("Table not available"); return; }
+        System.out.print("Number people: "); int pc = Integer.parseInt(scanner.nextLine().trim());
+        if (pc > t.getCapacity()){ System.out.println("Exceeds capacity"); return; }
+        t.setStatus("OCCUPIED"); t.setCustomerCount(pc); tableService.saveAll(); System.out.println("Assigned.");
+    }
+    private void cleanTable(){
+        viewTables();
+        System.out.print("Table id to clean: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        pos.model.Table t = tableService.findById(id);
+        if (t==null){ System.out.println("Not found"); return; }
+        if (!t.getStatus().equals("DIRTY")){ System.out.println("Not dirty"); return; }
+        t.setStatus("AVAILABLE"); t.setCustomerCount(0); tableService.saveAll(); System.out.println("Cleaned.");
+    }
+    private void addTable(){
+        System.out.print("Capacity: "); int cap = Integer.parseInt(scanner.nextLine().trim());
+        tableService.add(cap);
+        System.out.println("Added table.");
+    }
+    private void removeTable(){
+        viewTables();
+        System.out.print("Enter table id to remove: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        tableService.remove(id);
+        System.out.println("Removed table if existed.");
+    }
+
+    // ---------------- Employee Management ----------------
+    private void employeeManagement(){
+        while(true){
+            System.out.println("\n--- EMPLOYEE MANAGEMENT ---");
+            System.out.println("1) View Employees");
+            System.out.println("2) Add Employee");
+            System.out.println("3) Remove Employee");
+            System.out.println("4) Assign Auth to Employee");
+            System.out.println("0) Back");
+            System.out.print("Choose: "); String c = scanner.nextLine().trim();
+            if (c.equals("1")) viewEmployees();
+            else if (c.equals("2")) addEmployee();
+            else if (c.equals("3")) removeEmployee();
+            else if (c.equals("4")) assignAuth();
+            else if (c.equals("0")) return;
+            else System.out.println("Invalid");
+        }
+    }
+
+    private void viewEmployees(){
+        System.out.println("\n--- EMPLOYEES ---");
+        for (pos.model.Employee e : empService.all()) System.out.println(e.toString());
+    }
+    private void addEmployee(){
+        int id = empService.nextId();
+        System.out.print("Name: "); String name = scanner.nextLine().trim();
+        System.out.print("Role (Admin/Cashier): "); String role = scanner.nextLine().trim();
+        if (role.equalsIgnoreCase("Admin")) empService.add(new pos.model.Admin(id,name), "Admin");
+        else empService.add(new pos.model.Cashier(id,name), "Cashier");
+        System.out.println("Added employee id="+id);
+    }
+    private void removeEmployee(){
+        viewEmployees();
+        System.out.print("Enter employee id to remove: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        empService.remove(id);
+        System.out.println("Removed if existed.");
+    }
+
+    private void assignAuth(){
+        viewEmployees();
+        System.out.print("Employee id: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        pos.model.Employee e = empService.findById(id);
+        if (e==null){ System.out.println("Not found"); return; }
+        System.out.print("Username: "); String u = scanner.nextLine().trim();
+        System.out.print("Password: "); String p = scanner.nextLine().trim();
+        auth.addAuth(u,p,id,e.getRole());
+        System.out.println("Auth assigned.");
+    }
+
+    // ---------------- Sales Report ----------------
+    private void salesReportManagement(){
+        while(true){
+            System.out.println("\n--- SALES REPORT ---");
+            System.out.println("1) View All Sales Records");
+            System.out.println("2) Daily Sales (today)");
+            System.out.println("3) Monthly Sales");
+            System.out.println("4) Yearly Sales");
+            System.out.println("0) Back");
+            System.out.print("Choose: "); String c = scanner.nextLine().trim();
+            if (c.equals("1")) viewAllSales();
+            else if (c.equals("2")) viewDailySales();
+            else if (c.equals("3")) viewMonthlySales();
+            else if (c.equals("4")) viewYearlySales();
+            else if (c.equals("0")) return;
+            else System.out.println("Invalid");
+        }
+    }
+
+    private void viewAllSales(){
+        List<String> lines = FileUtil.readAllLines("resources/data/sales.txt");
+        System.out.println("\n--- SALES RECORDS ---");
+        for (String l : lines) System.out.println(l);
+    }
+
+    private void viewDailySales(){
+        List<String> lines = FileUtil.readAllLines("resources/data/sales.txt");
+        String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        double gross=0, discounts=0, net=0;
+        int items=0;
+        for (String l : lines){
+            String[] p = l.split("\\|", -1);
+            if (p.length<6) continue;
+            String dt = p[5];
+            if (dt.startsWith(today)){
+                double subtotal = Double.parseDouble(p[2]);
+                double disc = Double.parseDouble(p[3]);
+                double total = Double.parseDouble(p[4]);
+                gross += subtotal;
+                discounts += disc;
+                net += total;
+            }
+        }
+        System.out.println("Date: " + today);
+        System.out.println("Gross: " + String.format("%.2f", gross));
+        System.out.println("Discounts: " + String.format("%.2f", discounts));
+        System.out.println("Net: " + String.format("%.2f", net));
+    }
+
+    private void viewMonthlySales(){
+        System.out.print("Enter month (1-12): "); int month = Integer.parseInt(scanner.nextLine().trim());
+        System.out.print("Enter year (e.g. 2025): "); int year = Integer.parseInt(scanner.nextLine().trim());
+        List<String> lines = FileUtil.readAllLines("resources/data/sales.txt");
+        double gross=0, discounts=0, net=0;
+        for (String l : lines){
+            String[] p = l.split("\\|", -1);
+            if (p.length<6) continue;
+            String dt = p[5];
+            try {
+                java.util.Date d = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dt);
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(d);
+                int m = cal.get(Calendar.MONTH)+1;
+                int y = cal.get(Calendar.YEAR);
+                if (m==month && y==year){
+                    double subtotal = Double.parseDouble(p[2]);
+                    double disc = Double.parseDouble(p[3]);
+                    double total = Double.parseDouble(p[4]);
+                    gross += subtotal; discounts += disc; net += total;
+                }
+            } catch(Exception ex){}
+        }
+        System.out.println("Month: " + month + " Year: " + year);
+        System.out.println("Gross: " + String.format("%.2f", gross));
+        System.out.println("Discounts: " + String.format("%.2f", discounts));
+        System.out.println("Net: " + String.format("%.2f", net));
+    }
+
+    private void viewYearlySales(){
+        System.out.print("Enter year (e.g. 2025): "); int year = Integer.parseInt(scanner.nextLine().trim());
+        List<String> lines = FileUtil.readAllLines("resources/data/sales.txt");
+        double gross=0, discounts=0, net=0;
+        for (String l : lines){
+            String[] p = l.split("\\|", -1);
+            if (p.length<6) continue;
+            String dt = p[5];
+            try {
+                java.util.Date d = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dt);
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(d);
+                int y = cal.get(Calendar.YEAR);
+                if (y==year){
+                    double subtotal = Double.parseDouble(p[2]);
+                    double disc = Double.parseDouble(p[3]);
+                    double total = Double.parseDouble(p[4]);
+                    gross += subtotal; discounts += disc; net += total;
+                }
+            } catch(Exception ex){}
+        }
+        System.out.println("Year: " + year);
+        System.out.println("Gross: " + String.format("%.2f", gross));
+        System.out.println("Discounts: " + String.format("%.2f", discounts));
+        System.out.println("Net: " + String.format("%.2f", net));
+    }
+
+    // ---------------- Inventory Management ----------------
+    private void inventoryManagement(){
+        while(true){
+            System.out.println("\n--- INVENTORY MANAGEMENT ---");
+            System.out.println("1) View Ingredients");
+            System.out.println("2) Add Stock to Ingredient");
+            System.out.println("3) Remove Ingredient");
+            System.out.println("4) Update Ingredient Stock");
+            System.out.println("0) Back");
+            System.out.print("Choose: "); String c = scanner.nextLine().trim();
+            if (c.equals("1")) viewIngredients();
+            else if (c.equals("2")) addStock();
+            else if (c.equals("3")) removeIngredient();
+            else if (c.equals("4")) updateIngredientStock();
+            else if (c.equals("0")) return;
+            else System.out.println("Invalid");
+        }
+    }
+
+    private void viewIngredients(){
+        System.out.println("\n--- INGREDIENTS ---");
+        for (pos.model.Ingredient ing : inventory.all()) System.out.println(ing.toString());
+    }
+
+    private void addStock(){
+        viewIngredients();
+        System.out.print("Ingredient id: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        pos.model.Ingredient ing = inventory.findById(id);
+        if (ing==null){ System.out.println("Not found"); return; }
+        System.out.print("Add quantity (positive integer): "); int q = Integer.parseInt(scanner.nextLine().trim());
+        if (q <= 0){ System.out.println("Invalid quantity"); return; }
+        inventory.increase(id, q);
+        System.out.println("Added stock.");
+    }
+
+    private void removeIngredient(){
+        viewIngredients();
+        System.out.print("Ingredient id to remove: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        List<pos.model.Ingredient> list = inventory.all();
+        List<String> out = new ArrayList<String>();
+        for (pos.model.Ingredient i : list){
+            if (i.getId() != id) out.add(i.getId() + "|" + i.getName() + "|" + i.getStock() + "|" + i.getUnit() + "|" + i.getThreshold());
+        }
+        FileUtil.writeAll("resources/data/ingredientsStock.txt", out);
+        inventory.load();
+        System.out.println("Removed if existed.");
+    }
+
+    private void updateIngredientStock(){
+        viewIngredients();
+        System.out.print("Ingredient id to update: "); int id = Integer.parseInt(scanner.nextLine().trim());
+        pos.model.Ingredient ing = inventory.findById(id);
+        if (ing==null){ System.out.println("Not found"); return; }
+        System.out.print("Enter new stock (integer >= 0): "); int q = Integer.parseInt(scanner.nextLine().trim());
+        if (q < 0){ System.out.println("Invalid"); return; }
+        ing.setStock(q);
+        inventory.saveAll();
+        System.out.println("Updated.");
+    }
+
+}

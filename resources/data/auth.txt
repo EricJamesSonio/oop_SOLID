@@ -1,0 +1,4 @@
+admin|admin123|1|Admin
+cashier|cashier123|2|Cashiereric|eric123|3|Cashier
+eric|eric123|3|Cashier
+eric|eric123|4|Cashier

@@ -1,0 +1,5 @@
+1|Administrator|Admin
+2|Cashier|Cashier3|Eric|Cashier
+3|Eric|Cashier
+4|Eric|Cashier
+5|Eric|Cashier

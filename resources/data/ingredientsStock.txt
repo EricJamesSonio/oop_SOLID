@@ -1,0 +1,7 @@
+1|Chicken (pieces)|1|pcs|10
+2|Hotdog (pcs)|17|pcs|5
+3|Longganisa (pcs)|29|pcs|5
+4|Tocino (pcs)|29|pcs|5
+10|Coke (330ml)|36|bottle|10
+11|Sprite (330ml)|28|bottle|10
+12|Royal (330ml)|20|bottle|5

@@ -1,0 +1,124 @@
+
+package pos.service;
+
+import pos.model.Order;
+import pos.model.OrderItem;
+import pos.model.MenuItem;
+import pos.discount.*;
+import java.util.*;
+
+public class OrderService {
+    private String path = "resources/data/orders.txt";
+    private List<Order> orders = new ArrayList<Order>();
+    private MenuService menuService;
+    private InventoryService inventory;
+
+    public OrderService(MenuService menuService, InventoryService inventory){
+        this.menuService = menuService;
+        this.inventory = inventory;
+        load();
+    }
+    public void load(){
+        orders.clear();
+        List<String> lines = FileUtil.readAllLines(path);
+        for (String l : lines){
+            Order o = Order.parse(l);
+            if (o!=null) orders.add(o);
+        }
+    }
+    public List<Order> all(){ return orders; }
+    public Order findById(int id){
+        for (Order o: orders) if (o.getId()==id) return o;
+        return null;
+    }
+    public int nextId(){
+        int max = 0;
+        for (Order o: orders) if (o.getId()>max) max = o.getId();
+        return max+1;
+    }
+    public void add(Order o){
+        FileUtil.appendLine(path, serialize(o));
+        load();
+    }
+    public void update(Order o){
+        List<String> lines = FileUtil.readAllLines(path);
+        List<String> out = new ArrayList<String>();
+        for (String l : lines){
+            String[] p = l.split("\\|", -1);
+            try {
+                int id = Integer.parseInt(p[0]);
+                if (id == o.getId()){
+                    out.add(serialize(o));
+                } else out.add(l);
+            } catch(Exception ex){ out.add(l); }
+        }
+        FileUtil.writeAll(path, out);
+        load();
+    }
+    private String serialize(Order o){
+        // id|createdBy|tableId|status|subtotal|discountAmount|total|isPaid|createdAt|discountType|items
+        String items = o.serializeItems();
+        String subtotal = String.format("%.2f", o.getSubtotal());
+        String discount = String.format("%.2f", o.getDiscountAmount());
+        String total = String.format("%.2f", o.getTotal());
+        String paid = o.isPaid() ? "true" : "false";
+        String created = o.getCreatedAtString();
+        String dtype = o.getDiscountType();
+        return o.getId() + "|" + o.getCreatedBy() + "|" + o.getTableId() + "|" + o.getStatus() + "|" + subtotal + "|" + discount + "|" + total + "|" + paid + "|" + created + "|" + dtype + "|" + items;
+    }
+
+    public void applyDiscount(Order o, pos.discount.Discount d){
+        if (o == null) return;
+        if (d == null){
+            o.setDiscountAmount(0.0);
+            o.setDiscountType("NONE");
+        } else {
+            double amt = d.apply(o);
+            o.setDiscountAmount(amt);
+            o.setDiscountType(d.getLabel());
+        }
+    }
+
+    public List<String> tryDeductIngredients(Order o){
+        List<String> problems = new ArrayList<String>();
+        for (OrderItem it : o.getItems()){
+            MenuItem mi = menuService.findById(it.getMenuItemId());
+            if (mi == null) { problems.add("Menu item not found: " + it.getMenuItemName()); continue; }
+            if (mi.getRecipe() == null || mi.getRecipe().getItems().isEmpty()){
+                // drink - we expect there to be an ingredient representing the drink stock with same name
+                // find ingredient by name
+                IngredientServiceHelper helper = new IngredientServiceHelper(inventory);
+                boolean ok = helper.deductDrinkByName(mi.getName(), it.getQuantity());
+                if (!ok) problems.add("Insufficient stock for drink: " + mi.getName());
+            } else {
+                Map<Integer,Integer> map = mi.getRecipe().getItems();
+                for (Map.Entry<Integer,Integer> e : map.entrySet()){
+                    int ingId = e.getKey();
+                    int needPerPortion = e.getValue();
+                    int totalNeeded = needPerPortion * it.getQuantity();
+                    pos.model.Ingredient ing = inventory.findById(ingId);
+                    if (ing==null){ problems.add("Ingredient not found: id="+ingId); }
+                    else if (ing.getStock() < totalNeeded){ problems.add("Insufficient " + ing.getName() + " (need " + totalNeeded + " but have " + ing.getStock() + ")"); }
+                }
+            }
+        }
+        if (problems.isEmpty()){
+            for (OrderItem it : o.getItems()){
+                MenuItem mi = menuService.findById(it.getMenuItemId());
+                if (mi.getRecipe() == null || mi.getRecipe().getItems().isEmpty()){
+                    IngredientServiceHelper helper = new IngredientServiceHelper(inventory);
+                    helper.deductDrinkByName(mi.getName(), it.getQuantity());
+                } else {
+                    Map<Integer,Integer> map = mi.getRecipe().getItems();
+                    for (Map.Entry<Integer,Integer> e : map.entrySet()){
+                        int ingId = e.getKey();
+                        int needPerPortion = e.getValue();
+                        int totalNeeded = needPerPortion * it.getQuantity();
+                        inventory.deduct(ingId, totalNeeded);
+                    }
+                }
+            }
+        }
+        return problems;
+    }
+}

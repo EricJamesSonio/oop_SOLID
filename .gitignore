@@ -1,0 +1,4 @@
+
+# Ignore compiled class files and bin output
+*.class
+bin/
