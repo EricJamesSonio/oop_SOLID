@@ -1,8 +1,12 @@
-
 package pos.ui.tui;
 
 import pos.ui.UI;
-import pos.service.*;
+import pos.service.AuthService;
+import pos.service.EmployeeService;
+import pos.service.InventoryService;
+import pos.service.MenuService;
+import pos.service.OrderService;
+import pos.service.TableService;
 import pos.model.Employee;
 import java.util.Scanner;
 

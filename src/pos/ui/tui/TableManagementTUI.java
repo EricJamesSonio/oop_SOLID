@@ -1,20 +1,23 @@
 package pos.ui.tui;
 
 import pos.ui.UI;
-import pos.service.*;
-import java.util.*;
+import pos.service.TableService;
+import pos.model.Table;
+
+import java.util.List;
+import java.util.Scanner;
 
 public class TableManagementTUI implements UI {
-    private TableService tableService;
-    private Scanner scanner = new Scanner(System.in);
+    private final TableService tableService;
+    private final Scanner scanner = new Scanner(System.in);
 
     public TableManagementTUI(TableService tableService) {
         this.tableService = tableService;
     }
 
-    @Override 
+    @Override
     public void start() {
-        while(true) {
+        while (true) {
             System.out.println("\n--- TABLE MANAGEMENT ---");
             System.out.println("1) View Tables");
             System.out.println("2) Assign Customer to Table");
@@ -22,75 +25,102 @@ public class TableManagementTUI implements UI {
             System.out.println("4) Add Table");
             System.out.println("5) Remove Table");
             System.out.println("0) Back");
-            System.out.print("Choose: "); 
+            System.out.print("Choose: ");
             String c = scanner.nextLine().trim();
-            
-            if (c.equals("1")) viewTables();
-            else if (c.equals("2")) assignCustomerToTable();
-            else if (c.equals("3")) cleanTable();
-            else if (c.equals("4")) addTable();
-            else if (c.equals("5")) removeTable();
-            else if (c.equals("0")) return;
-            else System.out.println("Invalid");
+
+            switch (c) {
+                case "1": viewTables(); break;
+                case "2": assignCustomerToTable(); break;
+                case "3": cleanTable(); break;
+                case "4": addTable(); break;
+                case "5": removeTable(); break;
+                case "0": return;
+                default: System.out.println("Invalid"); break;
+            }
         }
     }
 
     private void viewTables() {
         System.out.println("\n--- TABLES ---");
-        for (pos.model.Table t : tableService.all()) 
-            System.out.println(t.toString());
+        List<Table> tables = tableService.all();
+        if (tables.isEmpty()) {
+            System.out.println("No tables available.");
+        } else {
+            for (Table t : tables) {
+                System.out.println(t);
+            }
+        }
     }
 
     private void assignCustomerToTable() {
         viewTables();
-        System.out.print("Table id: "); 
-        int id = Integer.parseInt(scanner.nextLine().trim());
-        pos.model.Table t = tableService.findById(id);
-        if (t==null) { System.out.println("Not found"); return; }
-        if (!t.getStatus().equals("AVAILABLE")) { 
-            System.out.println("Table not available"); 
-            return; 
+        Table t = promptTable("Table id: ");
+        if (t == null) return;
+
+        if (!"AVAILABLE".equalsIgnoreCase(t.getStatus())) {
+            System.out.println("Table not available");
+            return;
         }
-        System.out.print("Number people: "); 
-        int pc = Integer.parseInt(scanner.nextLine().trim());
-        if (pc > t.getCapacity()) { 
-            System.out.println("Exceeds capacity"); 
-            return; 
+
+        int pc = promptInt("Number of people: ");
+        if (pc > t.getCapacity()) {
+            System.out.println("Exceeds capacity");
+            return;
         }
-        t.setStatus("OCCUPIED"); 
-        t.setCustomerCount(pc); 
-        tableService.saveAll(); 
+
+        t.setStatus("OCCUPIED");
+        t.setCustomerCount(pc);
+        tableService.saveAll();
         System.out.println("Assigned.");
     }
 
     private void cleanTable() {
         viewTables();
-        System.out.print("Table id to clean: "); 
-        int id = Integer.parseInt(scanner.nextLine().trim());
-        pos.model.Table t = tableService.findById(id);
-        if (t==null) { System.out.println("Not found"); return; }
-        if (!t.getStatus().equals("DIRTY")) { 
-            System.out.println("Not dirty"); 
-            return; 
+        Table t = promptTable("Table id to clean: ");
+        if (t == null) return;
+
+        if (!"DIRTY".equalsIgnoreCase(t.getStatus())) {
+            System.out.println("Not dirty");
+            return;
         }
-        t.setStatus("AVAILABLE"); 
-        t.setCustomerCount(0); 
-        tableService.saveAll(); 
+
+        t.setStatus("AVAILABLE");
+        t.setCustomerCount(0);
+        tableService.saveAll();
         System.out.println("Cleaned.");
     }
 
     private void addTable() {
-        System.out.print("Capacity: "); 
-        int cap = Integer.parseInt(scanner.nextLine().trim());
+        int cap = promptInt("Capacity: ");
         tableService.add(cap);
         System.out.println("Added table.");
     }
 
     private void removeTable() {
         viewTables();
-        System.out.print("Enter table id to remove: "); 
-        int id = Integer.parseInt(scanner.nextLine().trim());
+        int id = promptInt("Enter table id to remove: ");
         tableService.remove(id);
         System.out.println("Removed table if existed.");
+    }
+
+    // === Helpers ===
+    private Table promptTable(String prompt) {
+        int id = promptInt(prompt);
+        Table t = tableService.findById(id);
+        if (t == null) {
+            System.out.println("Not found");
+        }
+        return t;
+    }
+
+    private int promptInt(String prompt) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                return Integer.parseInt(scanner.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number, try again.");
+            }
+        }
     }
 }

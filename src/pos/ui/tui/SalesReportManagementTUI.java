@@ -2,151 +2,121 @@ package pos.ui.tui;
 
 import pos.ui.UI;
 import pos.service.FileUtil;
-import java.util.*;
+
+import java.util.List;
+import java.util.Scanner;
+import java.util.Date;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.function.Predicate;
 
 public class SalesReportManagementTUI implements UI {
-    private Scanner scanner = new Scanner(System.in);
+    private final Scanner scanner = new Scanner(System.in);
+    private static final String SALES_FILE = "resources/data/sales.txt";
+    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final SimpleDateFormat DATE_ONLY_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
-    @Override 
+    @Override
     public void start() {
-        while(true) {
+        while (true) {
             System.out.println("\n--- SALES REPORT ---");
             System.out.println("1) View All Sales Records");
             System.out.println("2) Daily Sales (today)");
             System.out.println("3) Monthly Sales");
             System.out.println("4) Yearly Sales");
             System.out.println("0) Back");
-            System.out.print("Choose: "); 
+            System.out.print("Choose: ");
             String c = scanner.nextLine().trim();
-            
-            if (c.equals("1")) viewAllSales();
-            else if (c.equals("2")) viewDailySales();
-            else if (c.equals("3")) viewMonthlySales();
-            else if (c.equals("4")) viewYearlySales();
-            else if (c.equals("0")) return;
-            else System.out.println("Invalid");
+
+            switch (c) {
+                case "1": viewAllSales(); break;
+                case "2": viewDailySales(); break;
+                case "3": viewMonthlySales(); break;
+                case "4": viewYearlySales(); break;
+                case "0": return;
+                default: System.out.println("Invalid"); break;
+            }
         }
     }
 
     private void viewAllSales() {
-        List<String> lines = FileUtil.readAllLines("resources/data/sales.txt");
+        List<String> lines = FileUtil.readAllLines(SALES_FILE);
         System.out.println("\n--- SALES RECORDS ---");
         for (String l : lines) System.out.println(l);
     }
 
     private void viewDailySales() {
-        List<String> lines = FileUtil.readAllLines("resources/data/sales.txt");
-        String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        double gross=0, discounts=0, net=0;
-        int refundedItems = 0;
-        double refundAmount = 0.0;
-
-        for (String l : lines) {
-            String[] p = l.split("\\|", -1);
-            if (p.length < 7) continue;
-            String dt = p[6];
-            if (dt.startsWith(today) && (p.length < 8 || !"REFUND".equals(p[7]))) {
-                double subtotal = Double.parseDouble(p[2]);
-                double disc = Double.parseDouble(p[4]);
-                double total = Double.parseDouble(p[5]);
-                gross += subtotal;
-                discounts += disc;
-                net += total;
-            }
-            // handle explicit refund rows
-            if (dt.startsWith(today) && p.length >= 8 && "REFUND".equals(p[7])) {
-                double total = Double.parseDouble(p[5]);
-                refundAmount += Math.abs(total);
-                refundedItems += 1;
-            }
-        }
-
-        System.out.println("Date: " + today);
-        System.out.println("Gross: " + String.format("%.2f", gross));
-        System.out.println("Discounts: " + String.format("%.2f", discounts));
-        System.out.println("Net: " + String.format("%.2f", net));
-        System.out.println("Total Refund Amount: " + String.format("%.2f", refundAmount));
-        System.out.println("Total Refunded Items: " + refundedItems);
+        String today = DATE_ONLY_FORMAT.format(new Date());
+        summarizeSales(d -> DATE_ONLY_FORMAT.format(d).equals(today),
+                "Date: " + today);
     }
 
     private void viewMonthlySales() {
-        System.out.print("Enter month (1-12): "); 
-        int month = Integer.parseInt(scanner.nextLine().trim());
-        System.out.print("Enter year (e.g. 2025): "); 
-        int year = Integer.parseInt(scanner.nextLine().trim());
-        
-        List<String> lines = FileUtil.readAllLines("resources/data/sales.txt");
-        double gross=0, discounts=0, net=0, refundAmount=0.0;
-        int refundedItems=0;
+        try {
+            System.out.print("Enter month (1-12): ");
+            int month = Integer.parseInt(scanner.nextLine().trim());
+            System.out.print("Enter year (e.g. 2025): ");
+            int year = Integer.parseInt(scanner.nextLine().trim());
 
-        for (String l : lines) {
-            String[] p = l.split("\\|", -1);
-            if (p.length < 7) continue;
-            try {
-                java.util.Date d = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(p[6]);
-                java.util.Calendar cal = java.util.Calendar.getInstance();
+            summarizeSales(d -> {
+                Calendar cal = Calendar.getInstance();
                 cal.setTime(d);
-                int m = cal.get(java.util.Calendar.MONTH) + 1;
-                int y = cal.get(java.util.Calendar.YEAR);
-                if (m==month && y==year) {
-                    if (p.length < 8 || !"REFUND".equals(p[7])) {
-                        double subtotal = Double.parseDouble(p[2]);
-                        double disc = Double.parseDouble(p[4]);
-                        double total = Double.parseDouble(p[5]);
-                        gross += subtotal; discounts += disc; net += total;
-                    } else {
-                        double total = Double.parseDouble(p[5]);
-                        refundAmount += Math.abs(total);
-                        refundedItems += 1;
-                    }
-                }
-            } catch(Exception ex) {
-                // ignore invalid date rows
-            }
+                return (cal.get(Calendar.MONTH) + 1 == month && cal.get(Calendar.YEAR) == year);
+            }, "Month: " + month + " Year: " + year);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter numeric values.");
         }
-
-        System.out.println("Month: " + month + " Year: " + year);
-        System.out.println("Gross: " + String.format("%.2f", gross));
-        System.out.println("Discounts: " + String.format("%.2f", discounts));
-        System.out.println("Net: " + String.format("%.2f", net));
-        System.out.println("Total Refund Amount: " + String.format("%.2f", refundAmount));
-        System.out.println("Total Refunded Items: " + refundedItems);
     }
 
     private void viewYearlySales() {
-        System.out.print("Enter year (e.g. 2025): "); 
-        int year = Integer.parseInt(scanner.nextLine().trim());
-        
-        List<String> lines = FileUtil.readAllLines("resources/data/sales.txt");
-        double gross=0, discounts=0, net=0, refundAmount=0.0;
-        int refundedItems=0;
+        try {
+            System.out.print("Enter year (e.g. 2025): ");
+            int year = Integer.parseInt(scanner.nextLine().trim());
+
+            summarizeSales(d -> {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(d);
+                return cal.get(Calendar.YEAR) == year;
+            }, "Year: " + year);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a valid year.");
+        }
+    }
+
+    private void summarizeSales(Predicate<Date> filter, String header) {
+        List<String> lines = FileUtil.readAllLines(SALES_FILE);
+        double gross = 0, discounts = 0, net = 0, refundAmount = 0.0;
+        int refundedItems = 0;
 
         for (String l : lines) {
             String[] p = l.split("\\|", -1);
             if (p.length < 7) continue;
+
             try {
-                java.util.Date d = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(p[6]);
-                java.util.Calendar cal = java.util.Calendar.getInstance();
-                cal.setTime(d);
-                int y = cal.get(java.util.Calendar.YEAR);
-                if (y==year) {
-                    if (p.length < 8 || !"REFUND".equals(p[7])) {
-                        double subtotal = Double.parseDouble(p[2]);
-                        double disc = Double.parseDouble(p[4]);
-                        double total = Double.parseDouble(p[5]);
-                        gross += subtotal; discounts += disc; net += total;
+                Date d;
+                // try parsing full datetime first
+                try {
+                    d = DATE_TIME_FORMAT.parse(p[6]);
+                } catch (ParseException ex) {
+                    // fallback if only date is stored
+                    d = DATE_ONLY_FORMAT.parse(p[6]);
+                }
+
+                if (filter.test(d)) {
+                    if (p.length >= 8 && "REFUND".equals(p[7])) {
+                        refundAmount += Math.abs(Double.parseDouble(p[5]));
+                        refundedItems++;
                     } else {
-                        double total = Double.parseDouble(p[5]);
-                        refundAmount += Math.abs(total);
-                        refundedItems += 1;
+                        gross += Double.parseDouble(p[2]);
+                        discounts += Double.parseDouble(p[4]);
+                        net += Double.parseDouble(p[5]);
                     }
                 }
-            } catch(Exception ex) {
-                // ignore invalid date rows
-            }
+            } catch (Exception ignored) {}
         }
 
-        System.out.println("Year: " + year);
+        System.out.println(header);
         System.out.println("Gross: " + String.format("%.2f", gross));
         System.out.println("Discounts: " + String.format("%.2f", discounts));
         System.out.println("Net: " + String.format("%.2f", net));

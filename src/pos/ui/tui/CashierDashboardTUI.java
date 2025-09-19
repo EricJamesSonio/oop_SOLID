@@ -5,11 +5,20 @@ import pos.model.Employee;
 import pos.model.MenuItem;
 import pos.model.Order;
 import pos.model.OrderItem;
-import pos.discount.*;
-import pos.service.*;
-import pos.model.Ingredient;
-import java.util.*;
+import pos.discount.Discount;
+import pos.service.MenuService;
+import pos.service.EmployeeService;
+import pos.service.AuthService;
+import pos.service.TableService;
+import pos.service.OrderService;
+import pos.service.InventoryService;
+import pos.service.FileUtil;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.Scanner;
 import pos.AppConfig;
+
 
 public class CashierDashboardTUI implements UI {
     private Employee self;

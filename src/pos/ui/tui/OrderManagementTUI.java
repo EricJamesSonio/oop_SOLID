@@ -2,10 +2,18 @@ package pos.ui.tui;
 
 import pos.ui.UI;
 import pos.model.Employee;
-import pos.service.*;
 import pos.model.Order;
 import pos.model.OrderItem;
-import java.util.*;
+import pos.service.AuthService;
+import pos.service.EmployeeService;
+import pos.service.InventoryService;
+import pos.service.MenuService;
+import pos.service.OrderService;
+import pos.service.TableService;
+
+import java.util.List;
+import java.util.Scanner;
+
 
 public class OrderManagementTUI implements UI {
     private Employee currentUser;

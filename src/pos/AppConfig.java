@@ -1,6 +1,10 @@
 package pos;
 
-import pos.discount.*;
+import pos.discount.Discount;
+import pos.discount.PWDDiscount;
+import pos.discount.SeniorDiscount;
+import pos.discount.CombinedDiscount;
+
 
 public class AppConfig {
     public static final UIMode UI = UIMode.TUI; 

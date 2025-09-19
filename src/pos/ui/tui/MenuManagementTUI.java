@@ -1,12 +1,17 @@
 package pos.ui.tui;
 
 import pos.ui.UI;
-import pos.model.Employee;
-import pos.service.*;
+import pos.service.InventoryService;
+import pos.service.MenuService;
 import pos.model.MenuItem;
 import pos.model.Recipe;
 import pos.model.Ingredient;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
 public class MenuManagementTUI implements UI {
     private MenuService menu;

@@ -1,8 +1,13 @@
 package pos.ui.tui;
 
 import pos.ui.UI;
-import pos.service.*;
-import java.util.*;
+import pos.model.Employee;
+import pos.model.Admin;
+import pos.model.Cashier;
+import pos.service.EmployeeService;
+import pos.service.AuthService;
+
+import java.util.Scanner;
 
 public class EmployeeManagementTUI implements UI {
     private EmployeeService empService;
@@ -14,18 +19,18 @@ public class EmployeeManagementTUI implements UI {
         this.auth = auth;
     }
 
-    @Override 
+    @Override
     public void start() {
-        while(true) {
+        while (true) {
             System.out.println("\n--- EMPLOYEE MANAGEMENT ---");
             System.out.println("1) View Employees");
             System.out.println("2) Add Employee");
             System.out.println("3) Remove Employee");
             System.out.println("4) Assign Auth to Employee");
             System.out.println("0) Back");
-            System.out.print("Choose: "); 
+            System.out.print("Choose: ");
             String c = scanner.nextLine().trim();
-            
+
             if (c.equals("1")) viewEmployees();
             else if (c.equals("2")) addEmployee();
             else if (c.equals("3")) removeEmployee();
@@ -37,28 +42,30 @@ public class EmployeeManagementTUI implements UI {
 
     private void viewEmployees() {
         System.out.println("\n--- EMPLOYEES ---");
-        for (pos.model.Employee e : empService.all()) 
+        for (Employee e : empService.all()) {
             System.out.println(e.toString());
+        }
     }
 
     private void addEmployee() {
         int id = empService.nextId();
-        System.out.print("Name: "); 
+        System.out.print("Name: ");
         String name = scanner.nextLine().trim();
-        System.out.print("Role (Admin/Cashier): "); 
+        System.out.print("Role (Admin/Cashier): ");
         String role = scanner.nextLine().trim();
-        
-        if (role.equalsIgnoreCase("Admin")) 
-            empService.add(new pos.model.Admin(id,name), "Admin");
-        else 
-            empService.add(new pos.model.Cashier(id,name), "Cashier");
-        
-        System.out.println("Added employee id="+id);
+
+        if (role.equalsIgnoreCase("Admin")) {
+            empService.add(new Admin(id, name), "Admin");
+        } else {
+            empService.add(new Cashier(id, name), "Cashier");
+        }
+
+        System.out.println("Added employee id=" + id);
     }
 
     private void removeEmployee() {
         viewEmployees();
-        System.out.print("Enter employee id to remove: "); 
+        System.out.print("Enter employee id to remove: ");
         int id = Integer.parseInt(scanner.nextLine().trim());
         empService.remove(id);
         System.out.println("Removed if existed.");
@@ -66,17 +73,20 @@ public class EmployeeManagementTUI implements UI {
 
     private void assignAuth() {
         viewEmployees();
-        System.out.print("Employee id: "); 
+        System.out.print("Employee id: ");
         int id = Integer.parseInt(scanner.nextLine().trim());
-        pos.model.Employee e = empService.findById(id);
-        if (e==null) { System.out.println("Not found"); return; }
-        
-        System.out.print("Username: "); 
+        Employee e = empService.findById(id);
+        if (e == null) {
+            System.out.println("Not found");
+            return;
+        }
+
+        System.out.print("Username: ");
         String u = scanner.nextLine().trim();
-        System.out.print("Password: "); 
+        System.out.print("Password: ");
         String p = scanner.nextLine().trim();
-        
-        auth.addAuth(u,p,id,e.getRole());
+
+        auth.addAuth(u, p, id, e.getRole());
         System.out.println("Auth assigned.");
     }
 }

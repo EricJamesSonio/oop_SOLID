@@ -1,8 +1,11 @@
-
 package pos.service;
 
-import pos.model.*;
-import java.util.*;
+import pos.model.Employee;
+import pos.model.Admin;
+import pos.model.Cashier;
+import java.util.List;
+import java.util.ArrayList;
+
 
 public class EmployeeService {
     private String path = "resources/data/employees.txt";
